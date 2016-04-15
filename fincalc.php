@@ -190,11 +190,14 @@ class FinancialCalculator {
 
 	private function OutPPEDepreciationFromExistingPPAndE() {
 		//АСЧ(нач_стоимость;ост_стоимость;время_эксплуатации;период)
-		return (нач_стоимость - остаточная стоимость) * (Время_эксплуатации - период + 1) * 2 / (Время_эксплуатации * (Время_эксплуатации + 1));
+		return ($this->OutPPENetPPandE() - остаточная стоимость) * (Время_эксплуатации - период + 1) * 2 / (Время_эксплуатации * (Время_эксплуатации + 1));
 	}
 	// this function returns array of values
 	private function OutPPEDepreciationFromCapexPurchased() {
 
+	}
+	private function OutPPENetPPandE() {
+		
 	}
 
 	private function OutISTaxes() {
