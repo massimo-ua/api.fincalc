@@ -181,7 +181,20 @@ class FinancialCalculator {
 	}
 
 	private function OutPPETotalDepreciation() {
-		1/0;
+		$result = $this->OutPPEDepreciationFromExistingPPAndE();
+		foreach($this->OutPPEDepreciationFromCapexPurchased() as $value) {
+			$result += $value;
+		}
+		return $result;
+	}
+
+	private function OutPPEDepreciationFromExistingPPAndE() {
+		//АСЧ(нач_стоимость;ост_стоимость;время_эксплуатации;период)
+		return (нач_стоимость - остаточная стоимость) * (Время_эксплуатации - период + 1) * 2 / (Время_эксплуатации * (Время_эксплуатации + 1));
+	}
+	// this function returns array of values
+	private function OutPPEDepreciationFromCapexPurchased() {
+
 	}
 
 	private function OutISTaxes() {
@@ -198,6 +211,7 @@ class FinancialCalculator {
 		$this->OutISOperatingProfitEBIT = 		$this->OutISGrossProfit()
 																				+	$this->InISResearchAndDevelopment
 																				+ $this->InISSellingGeneralAndAdministrative;
+		return $this->OutISOperatingProfitEBIT;
 
 
 	}
