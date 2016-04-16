@@ -15,7 +15,7 @@ $product2->InPSForcasedProductionUnits = 2000;
 $products = array($product1, $product2);
 
 //print_r($products);
-
+$start = microtime(true);
 $calculator = new FinancialCalculator(
 	100,
 	100,
@@ -59,8 +59,9 @@ $calculator = new FinancialCalculator(
 	5
 	);
 
-echo $calculator->OutRCInterestIncome();
-
+echo $calculator->OutRCInterestIncome() . '<br>';
+$time_elapsed_secs = microtime(true) - $start;
+echo $time_elapsed_secs . ' c';
 //$result = ($data->c6 + $data->c7 + $data->c10 + $data->d11 + $data->d14 + $data->c16 + $data->c23 + $data->c35);
 
 //$today = date("Y-m-d H:i:s");
