@@ -34,7 +34,13 @@ class FinancialCalculator {
 	private $InDEBTInterestRateOnRevolver;
 	private $InDEBTRevolverMinimumCashDesired;
 	private $InIAAmortization;
+	private $InPPEFiscalPeriod;
+	private $InWCGrossPPandEBOP;
+	private $InWCNonDepreciablePPandEBOP;
+	private $InOBPropertyPlantAndEquipment;
 	private $InPSData;
+	//static input values
+	private $InPPEMidYearAdjustment = 0.5;
 	//Calculated intermediate values
 	private $LoopCounter=1;
 
@@ -43,6 +49,7 @@ class FinancialCalculator {
 	public $OutCFCashFromInvestingActivities;
 	public $OutRCInterestIncome=0;
 	public $OutISOperatingProfitEBIT;
+	public $OutPPEAverageUsefulLife;
 
 	function __construct(
 	$InOBCashAndEquivalentsSTandLTMarketSecurities,
@@ -78,6 +85,10 @@ class FinancialCalculator {
 	$InDEBTInterestRateOnRevolver,
 	$InDEBTRevolverMinimumCashDesired,
 	$InIAAmortization,
+	$InPPEFiscalPeriod,
+	$InWCGrossPPandEBOP,
+	$InWCNonDepreciablePPandEBOP,
+	$InOBPropertyPlantAndEquipment,
 
 	$InPSData) {
 			$this->InOBCashAndEquivalentsSTandLTMarketSecurities = $InOBCashAndEquivalentsSTandLTMarketSecurities;
@@ -113,7 +124,10 @@ class FinancialCalculator {
 			$this->InDEBTInterestRateOnRevolver =$InDEBTInterestRateOnRevolver;
 			$this->InDEBTRevolverMinimumCashDesired = $InDEBTRevolverMinimumCashDesired;
 			$this->InIAAmortization = $InIAAmortization;
-
+			$this->InPPEFiscalPeriod = $InPPEFiscalPeriod; // calculation period (i.e. if start year is 2015 and current calculation year is 2017 then value is 2)
+			$this->InWCGrossPPandEBOP = $InWCGrossPPandEBOP;
+			$this->InWCNonDepreciablePPandEBOP = $InWCNonDepreciablePPandEBOP;
+			$this->InOBPropertyPlantAndEquipment = $InOBPropertyPlantAndEquipment;
 			$this->InPSData = $InPSData;
 	}
 
@@ -190,14 +204,31 @@ class FinancialCalculator {
 
 	private function OutPPEDepreciationFromExistingPPAndE() {
 		//АСЧ(нач_стоимость;ост_стоимость;время_эксплуатации;период)
-		return ($this->OutPPENetPPandE() - остаточная стоимость) * (Время_эксплуатации - период + 1) * 2 / (Время_эксплуатации * (Время_эксплуатации + 1));
+		return ($this->OutPPENetPPandE() - 0) * ($this->OutPPEAverageUsefulLife - $this->InPPEFiscalPeriod + 1) * 2 / ($this->OutPPEAverageUsefulLife * ($this->OutPPEAverageUsefulLife + 1));
 	}
 	// this function returns array of values
 	private function OutPPEDepreciationFromCapexPurchased() {
-
+		$result = array();
+		$this->OutPPEAverageUsefulLife();
+		for(range(1,$this->InPPEFiscalPeriod) as $year) {
+			if($year == $this->InPPEFiscalPeriod) $result[] = $this->InPPEMidYearAdjustment * $this->InWCCapitalExpenditures / $this->OutPPEAverageUsefulLife;
+			else $result[] = $this->InWCCapitalExpenditures / $this->OutPPEAverageUsefulLife;
+		}
+		return $result;
 	}
 	private function OutPPENetPPandE() {
-		
+		//=E314-E315-E316
+		return $this->InWCGrossPPandEBOP - $this->InWCNonDepreciablePPandEBOP - $this->OutPPEAccumulatedDepreciation();
+	}
+	//reusable
+	private function OutPPEAverageUsefulLife() {
+		//todo Add calculation here
+		1/0;
+		return $this->OutPPEAverageUsefulLife;
+	}
+	private function OutPPEAccumulatedDepreciation() {
+		//=E314-E295
+		return $this->InWCGrossPPandEBOP - $this->InOBPropertyPlantAndEquipment;
 	}
 
 	private function OutISTaxes() {

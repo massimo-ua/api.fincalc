@@ -31,7 +31,11 @@ $InRCEndOfPeriod
 $InDEBTInterestRateOnRevolver
 $InDEBTRevolverMinimumCashDesired
 $InDEBTRevolverMinimumCashDesired
+$InPPEFiscalPeriod
 $InIAAmortization
+$InWCGrossPPandEBOP
+$InWCNonDepreciablePPandEBOP
+$InOBPropertyPlantAndEquipment
 
 
 $InPSData =
@@ -64,3 +68,7 @@ $OutRCInterestExpense;
 $OutRCEndOfPeriod;
 $OutRCEqualsCashAvailableToPaydownRevolver;
 $OutPPETotalDepreciation;
+$OutPPEDepreciationFromExistingPPAndE;
+$OutPPEDepreciationFromCapexPurchased;
+$OutPPENetPPandE;
+$OutPPEAverageUsefulLife;
