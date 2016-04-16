@@ -38,7 +38,9 @@ class FinancialCalculator {
 	private $InWCGrossPPandEBOP;
 	private $InWCNonDepreciablePPandEBOP;
 	private $InOBPropertyPlantAndEquipment;
+	private $InPLHistoryDepreciationAndAmortization;
 	private $InPSData;
+	private $InPPEAverageUsefulLifeOverride = NULL;
 	//static input values
 	private $InPPEMidYearAdjustment = 0.5;
 	//Calculated intermediate values
@@ -89,8 +91,9 @@ class FinancialCalculator {
 	$InWCGrossPPandEBOP,
 	$InWCNonDepreciablePPandEBOP,
 	$InOBPropertyPlantAndEquipment,
-
-	$InPSData) {
+	$InPLHistoryDepreciationAndAmortization,
+	$InPSData,
+	$InPPEAverageUsefulLifeOverride) {
 			$this->InOBCashAndEquivalentsSTandLTMarketSecurities = $InOBCashAndEquivalentsSTandLTMarketSecurities;
 			$this->InDEBTHistoryInterestRateOnCash = $InDEBTHistoryInterestRateOnCash;
 			$this->InCSSBC = $InCSSBC;
@@ -128,11 +131,13 @@ class FinancialCalculator {
 			$this->InWCGrossPPandEBOP = $InWCGrossPPandEBOP;
 			$this->InWCNonDepreciablePPandEBOP = $InWCNonDepreciablePPandEBOP;
 			$this->InOBPropertyPlantAndEquipment = $InOBPropertyPlantAndEquipment;
+			$this->InPLHistoryDepreciationAndAmortization = $InPLHistoryDepreciationAndAmortization;
 			$this->InPSData = $InPSData;
+			$this->InPPEAverageUsefulLifeOverride = $InPPEAverageUsefulLifeOverride;
 	}
 
 	public function OutRCInterestIncome() {
-		$result = ($this->InOBCashAndEquivalentsSTandLTMarketSecurities + $this->OutBSCashAndEquivalentsSTandLTMarketSecurities())*$this->InDEBTHistoryInterestRateOnCash/200;
+		$this->OutRCInterestIncome = ($this->InOBCashAndEquivalentsSTandLTMarketSecurities + $this->OutBSCashAndEquivalentsSTandLTMarketSecurities())*$this->InDEBTHistoryInterestRateOnCash/200;
 		//check for exit condition
 		/*if (abs($result - $this->OutRCInterestIncome) < 0.05) {
 			return $result;
@@ -142,13 +147,14 @@ class FinancialCalculator {
 			$this->OutRCInterestIncome();
 		}*/
 		//loop 100 times
+		//var_dump($result);
 		if($this->LoopCounter <= 100) {
 			$this->LoopCounter++;
-			echo $this->LoopCounter;
-			$this->OutRCInterestIncome = $result;
-			$this->OutRCInterestIncome();
+			return $this->OutRCInterestIncome();
 		}
-		else return $result;
+		else {
+			return $this->OutRCInterestIncome;
+		}
 
 	}
 	private function OutBSCashAndEquivalentsSTandLTMarketSecurities() {
@@ -159,14 +165,14 @@ class FinancialCalculator {
 	}
 	//reusable
 	private function OutCFCashFromOperatingActivities() {
-		echo __class__ . '::' . __function__.'<br>';
+		//echo __class__ . '::' . __function__.'<br>';
 		$this->OutCFCashFromOperatingActivities =		$this->OutCFNetIncome()
 													  + $this->OutISDepreciationAndAmortization()
 													  + $this->InCSSBC
 													  - ($this->InWCAR - $this->InOBAccountsReceivable)
 													  - ($this->InWCInventory - $this->InOBInventory)
 													  + ($this->InWCAP - $this->InOBAccountsPayable)
-													  + ( $this->InWCAccruedExpenses - $this->InOBAccruedExpenses)
+													  + ($this->InWCAccruedExpenses - $this->InOBAccruedExpenses)
 													  - $this->InLDTOtherCurrentAssets
 													  - $this->InLDTDeferredTaxAssets
 													  - $this->InLDTOtherAssets
@@ -181,10 +187,10 @@ class FinancialCalculator {
 	}
 	private function OutCFCashFromFinancingActivities() {
 		return 		$this->InDEBTAdditionalBorrowingOrPayDown
-						+ $this->$InREDividends
+						+ $this->InREDividends
 						+ $this->InCSNewShareIssuance
-						+ $this->$InCSStockRepurchases
-						+ $this->$InPLOtherComprehensiveIncomeOrLoss;
+						+ $this->InCSStockRepurchases
+						+ $this->InPLOtherComprehensiveIncomeOrLoss;
 	}
 	private function OutCFNetIncome() {
 		return $this->OutISTaxes() + $this->OutISPretaxProfit();
@@ -204,13 +210,13 @@ class FinancialCalculator {
 
 	private function OutPPEDepreciationFromExistingPPAndE() {
 		//АСЧ(нач_стоимость;ост_стоимость;время_эксплуатации;период)
+		$this->OutPPEAverageUsefulLife();
 		return ($this->OutPPENetPPandE() - 0) * ($this->OutPPEAverageUsefulLife - $this->InPPEFiscalPeriod + 1) * 2 / ($this->OutPPEAverageUsefulLife * ($this->OutPPEAverageUsefulLife + 1));
 	}
 	// this function returns array of values
 	private function OutPPEDepreciationFromCapexPurchased() {
 		$result = array();
-		$this->OutPPEAverageUsefulLife();
-		for(range(1,$this->InPPEFiscalPeriod) as $year) {
+		foreach(range(1,$this->InPPEFiscalPeriod) as $year) {
 			if($year == $this->InPPEFiscalPeriod) $result[] = $this->InPPEMidYearAdjustment * $this->InWCCapitalExpenditures / $this->OutPPEAverageUsefulLife;
 			else $result[] = $this->InWCCapitalExpenditures / $this->OutPPEAverageUsefulLife;
 		}
@@ -222,13 +228,22 @@ class FinancialCalculator {
 	}
 	//reusable
 	private function OutPPEAverageUsefulLife() {
-		//todo Add calculation here
-		1/0;
+		//ЕСЛИ(D319;D319;-ОКРУГЛ((E314-E315)/E308;0))
+		if(is_null($this->InPPEAverageUsefulLifeOverride)) {
+			$this->OutPPEAverageUsefulLife = - round(($this->InWCGrossPPandEBOP - $this->InWCNonDepreciablePPandEBOP) / $this->OutPPEDepreciation());
+		}
+		else {
+			$this->OutPPEAverageUsefulLife = $this->InPPEAverageUsefulLifeOverride;
+		}
 		return $this->OutPPEAverageUsefulLife;
 	}
 	private function OutPPEAccumulatedDepreciation() {
 		//=E314-E295
 		return $this->InWCGrossPPandEBOP - $this->InOBPropertyPlantAndEquipment;
+	}
+	private function OutPPEDepreciation() {
+		//-(E175+E287)
+		return -( $this->InPLHistoryDepreciationAndAmortization + $this->InIAAmortization);
 	}
 
 	private function OutISTaxes() {

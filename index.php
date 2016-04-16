@@ -50,12 +50,16 @@ $calculator = new FinancialCalculator(
 	100,
 	100,
 	-139,
-	$products
+	2,
+	100,
+	100,
+	100,
+	100,
+	$products,
+	5
 	);
 
-$result = $calculator->OutRCInterestIncome();
-
-echo $result;
+echo $calculator->OutRCInterestIncome();
 
 //$result = ($data->c6 + $data->c7 + $data->c10 + $data->d11 + $data->d14 + $data->c16 + $data->c23 + $data->c35);
 
