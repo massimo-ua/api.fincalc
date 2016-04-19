@@ -36,7 +36,9 @@ $InIAAmortization
 $InWCGrossPPandEBOP
 $InWCNonDepreciablePPandEBOP
 $InOBPropertyPlantAndEquipment
-
+$InPLHistoryDepreciationAndAmortization,
+$InISBasicSharesOutstanding,
+$InOBMarketSharePrice,
 
 $InPSData =
   [
@@ -72,3 +74,6 @@ $OutPPEDepreciationFromExistingPPAndE;
 $OutPPEDepreciationFromCapexPurchased;
 $OutPPENetPPandE;
 $OutPPEAverageUsefulLife;
+$OutISBasicSharesOutstanding;
+$OutSOEndOfPeriod;
+$OutSOAverageSharePrice;

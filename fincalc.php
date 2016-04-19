@@ -39,6 +39,8 @@ class FinancialCalculator {
 	private $InWCNonDepreciablePPandEBOP;
 	private $InOBPropertyPlantAndEquipment;
 	private $InPLHistoryDepreciationAndAmortization;
+	private $InISBasicSharesOutstanding;
+	private $InOBMarketSharePrice;
 	private $InPSData;
 	private $InPPEAverageUsefulLifeOverride = NULL;
 	//static input values
@@ -52,6 +54,7 @@ class FinancialCalculator {
 	public $OutRCInterestIncome=0;
 	public $OutISOperatingProfitEBIT;
 	public $OutPPEAverageUsefulLife;
+	public $OutSOAverageSharePrice;
 
 	function __construct(
 	$InOBCashAndEquivalentsSTandLTMarketSecurities,
@@ -92,6 +95,8 @@ class FinancialCalculator {
 	$InWCNonDepreciablePPandEBOP,
 	$InOBPropertyPlantAndEquipment,
 	$InPLHistoryDepreciationAndAmortization,
+	$InISBasicSharesOutstanding,
+	$InOBMarketSharePrice,
 	$InPSData,
 	$InPPEAverageUsefulLifeOverride) {
 			$this->InOBCashAndEquivalentsSTandLTMarketSecurities = $InOBCashAndEquivalentsSTandLTMarketSecurities;
@@ -132,6 +137,8 @@ class FinancialCalculator {
 			$this->InWCNonDepreciablePPandEBOP = $InWCNonDepreciablePPandEBOP;
 			$this->InOBPropertyPlantAndEquipment = $InOBPropertyPlantAndEquipment;
 			$this->InPLHistoryDepreciationAndAmortization = $InPLHistoryDepreciationAndAmortization;
+			$this->InISBasicSharesOutstanding = $InISBasicSharesOutstanding;
+			$this->InOBMarketSharePrice = $InOBMarketSharePrice;
 			$this->InPSData = $InPSData;
 			$this->InPPEAverageUsefulLifeOverride = $InPPEAverageUsefulLifeOverride;
 	}
@@ -296,6 +303,44 @@ class FinancialCalculator {
 			$total += $product->InPSForcastedSales * $product->InPSForcasedProductionUnits / 1000;
 		}
 		return $total;
+	}
+
+	public function OutISBasicSharesOutstanding() {
+		//СРЗНАЧ(F438;F441)
+		return ($this->InISBasicSharesOutstanding + $this->OutSOEndOfPeriod() ) / 2;
+	}
+
+	private function OutSOEndOfPeriod() {
+		//СУММ(F438:F440)
+		return $this->InISBasicSharesOutstanding + $this->OutSONewSharesIssued() + $this->OutSOSharesRepurchased();
+	}
+
+	private function OutSONewSharesIssued() {
+		//F376/F445
+		return $this->InCSNewShareIssuance / $this->OutSOAverageSharePrice();
+	}
+
+	private function OutSOSharesRepurchased() {
+		//F385/F445
+		return $this->InCSStockRepurchases / $this->OutSOAverageSharePrice;
+	}
+
+	private function OutSOAverageSharePrice() {
+		//E445*(1+F444)
+		return $this->InOBMarketSharePrice * (1 + $this->OutSOChangeInEPSYearOverYear());
+	}
+
+	private function OutSOChangeInEPSYearOverYear() {
+		//F443/E443-1
+		return  $this->OutSOConsensusEPS() / ($this->OutISDilutedEPS() - 1);
+	}
+
+	private function OutSOConsensusEPS() {
+		//E443*(1+F444)
+	}
+
+	private function OutISDilutedEPS() {
+		//E158/E162
 	}
 
 }
