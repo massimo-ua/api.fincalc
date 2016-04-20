@@ -41,6 +41,8 @@ class FinancialCalculator {
 	private $InPLHistoryDepreciationAndAmortization;
 	private $InISBasicSharesOutstanding;
 	private $InOBMarketSharePrice;
+	private $InPLDilutedSharesOutstanding;
+	private $InPLTaxes;
 	private $InPSData;
 	private $InPPEAverageUsefulLifeOverride = NULL;
 	//static input values
@@ -55,6 +57,8 @@ class FinancialCalculator {
 	public $OutISOperatingProfitEBIT;
 	public $OutPPEAverageUsefulLife;
 	public $OutSOAverageSharePrice;
+	public $OutISDilutedEPS;
+	public $OutSOChangeInEPSYearOverYear;
 
 	function __construct(
 	$InOBCashAndEquivalentsSTandLTMarketSecurities,
@@ -97,6 +101,8 @@ class FinancialCalculator {
 	$InPLHistoryDepreciationAndAmortization,
 	$InISBasicSharesOutstanding,
 	$InOBMarketSharePrice,
+	$InPLDilutedSharesOutstanding,
+	$InPLTaxes,
 	$InPSData,
 	$InPPEAverageUsefulLifeOverride) {
 			$this->InOBCashAndEquivalentsSTandLTMarketSecurities = $InOBCashAndEquivalentsSTandLTMarketSecurities;
@@ -139,6 +145,8 @@ class FinancialCalculator {
 			$this->InPLHistoryDepreciationAndAmortization = $InPLHistoryDepreciationAndAmortization;
 			$this->InISBasicSharesOutstanding = $InISBasicSharesOutstanding;
 			$this->InOBMarketSharePrice = $InOBMarketSharePrice;
+			$this->InPLDilutedSharesOutstanding = $InPLDilutedSharesOutstanding;
+			$this->InPLTaxes = $InPLTaxes;
 			$this->InPSData = $InPSData;
 			$this->InPPEAverageUsefulLifeOverride = $InPPEAverageUsefulLifeOverride;
 	}
@@ -173,6 +181,7 @@ class FinancialCalculator {
 	//reusable
 	private function OutCFCashFromOperatingActivities() {
 		//echo __class__ . '::' . __function__.'<br>';
+		if(isset($this->OutCFCashFromOperatingActivities)) return $this->OutCFCashFromOperatingActivities;
 		$this->OutCFCashFromOperatingActivities =		$this->OutCFNetIncome()
 													  + $this->OutISDepreciationAndAmortization()
 													  + $this->InCSSBC
@@ -189,6 +198,7 @@ class FinancialCalculator {
 	}
 
 	private function OutCFCashFromInvestingActivities() {
+		if(isset($this->OutCFCashFromInvestingActivities)) return $this->OutCFCashFromInvestingActivities;
 		$this->OutCFCashFromInvestingActivities = $this->InWCPurchasesOfIntangibleAssets - $this->InWCCapitalExpenditures;
 		return $this->OutCFCashFromInvestingActivities;
 	}
@@ -217,15 +227,15 @@ class FinancialCalculator {
 
 	private function OutPPEDepreciationFromExistingPPAndE() {
 		//АСЧ(нач_стоимость;ост_стоимость;время_эксплуатации;период)
-		$this->OutPPEAverageUsefulLife();
-		return ($this->OutPPENetPPandE() - 0) * ($this->OutPPEAverageUsefulLife - $this->InPPEFiscalPeriod + 1) * 2 / ($this->OutPPEAverageUsefulLife * ($this->OutPPEAverageUsefulLife + 1));
+		//$this->OutPPEAverageUsefulLife();
+		return ($this->OutPPENetPPandE() - 0) * ($this->OutPPEAverageUsefulLife() - $this->InPPEFiscalPeriod + 1) * 2 / ($this->OutPPEAverageUsefulLife() * ($this->OutPPEAverageUsefulLife() + 1));
 	}
 	// this function returns array of values
 	private function OutPPEDepreciationFromCapexPurchased() {
 		$result = array();
 		foreach(range(1,$this->InPPEFiscalPeriod) as $year) {
-			if($year == $this->InPPEFiscalPeriod) $result[] = $this->InPPEMidYearAdjustment * $this->InWCCapitalExpenditures / $this->OutPPEAverageUsefulLife;
-			else $result[] = $this->InWCCapitalExpenditures / $this->OutPPEAverageUsefulLife;
+			if($year == $this->InPPEFiscalPeriod) $result[] = $this->InPPEMidYearAdjustment * $this->InWCCapitalExpenditures / $this->OutPPEAverageUsefulLife();
+			else $result[] = $this->InWCCapitalExpenditures / $this->OutPPEAverageUsefulLife();
 		}
 		return $result;
 	}
@@ -236,6 +246,7 @@ class FinancialCalculator {
 	//reusable
 	private function OutPPEAverageUsefulLife() {
 		//ЕСЛИ(D319;D319;-ОКРУГЛ((E314-E315)/E308;0))
+		if(isset($this->OutPPEAverageUsefulLife)) return $this->OutPPEAverageUsefulLife;
 		if(is_null($this->InPPEAverageUsefulLifeOverride)) {
 			$this->OutPPEAverageUsefulLife = - round(($this->InWCGrossPPandEBOP - $this->InWCNonDepreciablePPandEBOP) / $this->OutPPEDepreciation());
 		}
@@ -257,13 +268,16 @@ class FinancialCalculator {
 		return - $this->OutISPretaxProfit() * $this->InPLBlendedTaxRate / 100;
 	}
 	private function OutISPretaxProfit() {
-		return 		$this->OutISOperatingProfitEBIT()
-						+ $this->OutRCInterestIncome
-						+ $this->OutISInterestExpense()
-						+ $this->InPLOtherExpense;
+		if(isset($this->OutISPretaxProfit)) return $this->OutISPretaxProfit;
+		$this->OutISPretaxProfit =		$this->OutISOperatingProfitEBIT()
+																+ $this->OutRCInterestIncome
+																+ $this->OutISInterestExpense()
+																+ $this->InPLOtherExpense;
+		return $this->OutISPretaxProfit;
 	}
 	//reusable
 	private function OutISOperatingProfitEBIT() {
+		if(isset($this->OutISOperatingProfitEBIT)) return $this->OutISOperatingProfitEBIT;
 		$this->OutISOperatingProfitEBIT = 		$this->OutISGrossProfit()
 																				+	$this->InISResearchAndDevelopment
 																				+ $this->InISSellingGeneralAndAdministrative;
@@ -286,7 +300,7 @@ class FinancialCalculator {
 	}
 
 	private function OutRCFreeCashFlowsGeneratedDuringPeriod() {
-		return $this->OutCFCashFromOperatingActivities + $this->OutCFCashFromInvestingActivities + $this->InDEBTAdditionalBorrowingOrPayDown + $this->InPLOtherComprehensiveIncomeOrLoss;
+		return $this->OutCFCashFromOperatingActivities() + $this->OutCFCashFromInvestingActivities() + $this->InDEBTAdditionalBorrowingOrPayDown + $this->InPLOtherComprehensiveIncomeOrLoss;
 	}
 
 	private function OutRCExcessCashAtBOP() {
@@ -322,25 +336,37 @@ class FinancialCalculator {
 
 	private function OutSOSharesRepurchased() {
 		//F385/F445
-		return $this->InCSStockRepurchases / $this->OutSOAverageSharePrice;
+		return $this->InCSStockRepurchases / $this->OutSOAverageSharePrice();
 	}
 
 	private function OutSOAverageSharePrice() {
 		//E445*(1+F444)
-		return $this->InOBMarketSharePrice * (1 + $this->OutSOChangeInEPSYearOverYear());
+		if(isset($this->OutSOAverageSharePrice)) return $this->OutSOAverageSharePrice;
+		$this->OutSOAverageSharePrice = $this->InOBMarketSharePrice * (1 + $this->OutSOChangeInEPSYearOverYear());
+		return $this->OutSOAverageSharePrice;
 	}
-
+	//reusable
 	private function OutSOChangeInEPSYearOverYear() {
 		//F443/E443-1
-		return  $this->OutSOConsensusEPS() / ($this->OutISDilutedEPS() - 1);
+		if(isset($this->OutSOChangeInEPSYearOverYear)) return $this->OutSOChangeInEPSYearOverYear;
+		$this->OutSOChangeInEPSYearOverYear = $this->OutSOConsensusEPS() / ($this->OutISDilutedEPS() - 1);
+		return $this->OutSOChangeInEPSYearOverYear;
 	}
 
 	private function OutSOConsensusEPS() {
 		//E443*(1+F444)
+		return $this->OutISDilutedEPS() * (1 + $this->OutSOChangeInEPSYearOverYear());
 	}
-
+	//reusable
 	private function OutISDilutedEPS() {
 		//E158/E162
+		if(isset($this->OutISDilutedEPS)) return $this->OutISDilutedEPS;
+		$this->OutISDilutedEPS = $this->OutISNetIncome() / $this->InPLDilutedSharesOutstanding;
+		return $this->OutISDilutedEPS;
+	}
+
+	private function OutISNetIncome() {
+		return $this->OutISPretaxProfit() + $this->InPLTaxes;
 	}
 
 }
