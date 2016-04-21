@@ -368,5 +368,6 @@ class FinancialCalculator {
 	private function OutISNetIncome() {
 		return $this->OutISPretaxProfit() + $this->InPLTaxes;
 	}
-
+//commentik
+//comentik-2
 }
