@@ -388,5 +388,5 @@ class FinancialCalculator {
 		return $this->OutISPretaxProfit() + $this->InPLTaxes;
 	}
 //commentik
-//comentik-2
+
 }
