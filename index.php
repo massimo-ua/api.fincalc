@@ -63,9 +63,15 @@ $calculator = new FinancialCalculator(
 	1650,
 	16597,
 	6757,
+	925,
+	40,
+	931.662,
+	-13118,
 	$products,
 	5
 	);
+echo $calculator->OutISInterestExpense(). '<br>'; exit(0);
+
 
 echo $calculator->OutRCInterestIncome() . '<br>';
 $time_elapsed_secs = microtime(true) - $start;
