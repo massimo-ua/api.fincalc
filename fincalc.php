@@ -151,7 +151,33 @@ class FinancialCalculator {
 			$this->InPPEAverageUsefulLifeOverride = $InPPEAverageUsefulLifeOverride;
 	}
 
+
+	private function OutPSTotalHistorySales() {
+		//Parameter OutPSTotalHistorySales / ISOutRevenue
+		$total = 0;
+		foreach ($this->InPSData as $product) {
+			$total += $product->InPSForcastedSales * $product->InPSForcasedProductionUnits / 1000;
+		}
+		return $total;
+	}
+
+	private function OutISGrossProfit() {
+		//Parameter OutISGrossProfit
+		return $this->OutPSTotalHistorySales() + $this->InISCostOfSales;
+	}
+
+
+	private function OutISOperatingProfitEBIT() {
+ 		//reusable
+		//Parameter OutISOperatingProfitEBIT
+		if(isset($this->OutISOperatingProfitEBIT)) return $this->OutISOperatingProfitEBIT;
+		$this->OutISOperatingProfitEBIT = 		$this->OutISGrossProfit()
+																				+	$this->InISResearchAndDevelopment
+																				+ $this->InISSellingGeneralAndAdministrative;
+		return $this->OutISOperatingProfitEBIT;
+
 	public function OutRCInterestIncome() {
+		//Parameter OutRCInterestIncome
 		$this->OutRCInterestIncome = ($this->InOBCashAndEquivalentsSTandLTMarketSecurities + $this->OutBSCashAndEquivalentsSTandLTMarketSecurities())*$this->InDEBTHistoryInterestRateOnCash/200;
 		//check for exit condition
 		/*if (abs($result - $this->OutRCInterestIncome) < 0.05) {
@@ -172,17 +198,22 @@ class FinancialCalculator {
 		}
 
 	}
-	private function OutBSCashAndEquivalentsSTandLTMarketSecurities() {
-			return $this->InOBCashAndEquivalentsSTandLTMarketSecurities + $this->OutCFNetChangeInCashDuringPeriod();
-	}
-	private function OutCFNetChangeInCashDuringPeriod() {
-		return $this->OutCFCashFromOperatingActivities() + $this->OutCFCashFromInvestingActivities() + $this->OutCFCashFromFinancingActivities();
-	}
-	//reusable
-	private function OutCFCashFromOperatingActivities() {
-		//echo __class__ . '::' . __function__.'<br>';
-		if(isset($this->OutCFCashFromOperatingActivities)) return $this->OutCFCashFromOperatingActivities;
-		$this->OutCFCashFromOperatingActivities =		$this->OutCFNetIncome()
+
+
+			private function OutBSCashAndEquivalentsSTandLTMarketSecurities() {
+					return $this->InOBCashAndEquivalentsSTandLTMarketSecurities + $this->OutCFNetChangeInCashDuringPeriod();
+			}
+
+			private function OutCFNetChangeInCashDuringPeriod() {
+					return $this->OutCFCashFromOperatingActivities() + $this->OutCFCashFromInvestingActivities() + $this->OutCFCashFromFinancingActivities();
+			}
+
+
+			private function OutCFCashFromOperatingActivities() {
+					//reusable
+					//echo __class__ . '::' . __function__.'<br>';
+					if(isset($this->OutCFCashFromOperatingActivities)) return $this->OutCFCashFromOperatingActivities;
+					$this->OutCFCashFromOperatingActivities =		$this->OutCFNetIncome()
 													  + $this->OutISDepreciationAndAmortization()
 													  + $this->InCSSBC
 													  - ($this->InWCAR - $this->InOBAccountsReceivable)
@@ -194,36 +225,38 @@ class FinancialCalculator {
 													  - $this->InLDTOtherAssets
 													  + $this->InLDTAccruedExpensesAndDefRevenues
 													  + $this->InDEBTPIKAccrual;
-		return $this->OutCFCashFromOperatingActivities;
-	}
+					return $this->OutCFCashFromOperatingActivities;
+			}
 
-	private function OutCFCashFromInvestingActivities() {
-		if(isset($this->OutCFCashFromInvestingActivities)) return $this->OutCFCashFromInvestingActivities;
-		$this->OutCFCashFromInvestingActivities = $this->InWCPurchasesOfIntangibleAssets - $this->InWCCapitalExpenditures;
-		return $this->OutCFCashFromInvestingActivities;
-	}
-	private function OutCFCashFromFinancingActivities() {
-		return 		$this->InDEBTAdditionalBorrowingOrPayDown
+			private function OutCFCashFromInvestingActivities() {
+				if(isset($this->OutCFCashFromInvestingActivities)) return $this->OutCFCashFromInvestingActivities;
+				$this->OutCFCashFromInvestingActivities = $this->InWCPurchasesOfIntangibleAssets - $this->InWCCapitalExpenditures;
+				return $this->OutCFCashFromInvestingActivities;
+			}
+
+			private function OutCFCashFromFinancingActivities() {
+				return 		$this->InDEBTAdditionalBorrowingOrPayDown
 						+ $this->InREDividends
 						+ $this->InCSNewShareIssuance
 						+ $this->InCSStockRepurchases
 						+ $this->InPLOtherComprehensiveIncomeOrLoss;
-	}
-	private function OutCFNetIncome() {
-		return $this->OutISTaxes() + $this->OutISPretaxProfit();
-	}
+			}
 
-	private function OutISDepreciationAndAmortization() {
-		return -($this->OutPPETotalDepreciation() + $this->InIAAmortization);
-	}
+			private function OutCFNetIncome() {
+				return $this->OutISTaxes() + $this->OutISPretaxProfit();
+			}
 
-	private function OutPPETotalDepreciation() {
-		$result = $this->OutPPEDepreciationFromExistingPPAndE();
-		foreach($this->OutPPEDepreciationFromCapexPurchased() as $value) {
-			$result += $value;
-		}
-		return $result;
-	}
+			private function OutISDepreciationAndAmortization() {
+				return -($this->OutPPETotalDepreciation() + $this->InIAAmortization);
+			}
+
+			private function OutPPETotalDepreciation() {
+				$result = $this->OutPPEDepreciationFromExistingPPAndE();
+				foreach($this->OutPPEDepreciationFromCapexPurchased() as $value) {
+					$result += $value;
+				}
+				return $result;
+			}
 
 	private function OutPPEDepreciationFromExistingPPAndE() {
 		//АСЧ(нач_стоимость;ост_стоимость;время_эксплуатации;период)
@@ -275,13 +308,7 @@ class FinancialCalculator {
 																+ $this->InPLOtherExpense;
 		return $this->OutISPretaxProfit;
 	}
-	//reusable
-	private function OutISOperatingProfitEBIT() {
-		if(isset($this->OutISOperatingProfitEBIT)) return $this->OutISOperatingProfitEBIT;
-		$this->OutISOperatingProfitEBIT = 		$this->OutISGrossProfit()
-																				+	$this->InISResearchAndDevelopment
-																				+ $this->InISSellingGeneralAndAdministrative;
-		return $this->OutISOperatingProfitEBIT;
+
 
 
 	}
@@ -307,17 +334,9 @@ class FinancialCalculator {
 		return   $this->InOBCashAndEquivalentsSTandLTMarketSecurities - $this->InDEBTRevolverMinimumCashDesired;
 	}
 
-	private function OutISGrossProfit() {
-		return $this->OutPSTotalHistorySales() + $this->InISCostOfSales;
-	}
 
-	private function OutPSTotalHistorySales() {
-		$total = 0;
-		foreach ($this->InPSData as $product) {
-			$total += $product->InPSForcastedSales * $product->InPSForcasedProductionUnits / 1000;
-		}
-		return $total;
-	}
+
+
 
 	public function OutISBasicSharesOutstanding() {
 		//СРЗНАЧ(F438;F441)
